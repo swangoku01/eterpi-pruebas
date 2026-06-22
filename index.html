@@ -6,16 +6,19 @@
     <title>Celular - Transmisor GPS</title>
 </head>
 <body>
-    <h1>Transmitiendo GPS...</h1>
-    <div id="estado">Iniciando rastreo...</div>
+    <div style="text-align: center; padding: 50px; font-family: Arial;">
+        <h1 style="color: #4CAF50;">📡 Transmisor Activo</h1>
+        <div id="estado" style="font-size: 1.3em; margin-top: 20px; color: #555;">
+            Iniciando rastreador... por favor acepta los permisos.
+        </div>
+    </div>
 
-    <!-- Librerías de Firebase -->
+    <!-- Cargar librerías COMPAT de Firebase (Obligatorias) -->
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
 
     <script>
-        
-                const firebaseConfig = {
+       const firebaseConfig = {
   apiKey: "AIzaSyAjwC0kd0MfffW3ybzK_ypmNLCBH_QbfWQ",
   authDomain: "eterpi-pruebas.firebaseapp.com",
   databaseURL: "https://eterpi-pruebas-default-rtdb.firebaseio.com",
@@ -26,28 +29,41 @@
   measurementId: "G-GHXW8G3JL4"
 };
         
+        // Inicializar Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        if (navigator.geolocation) {
-            navigator.geolocation.watchPosition((posicion) => {
-                const datos = {
-                    lat: posicion.coords.latitude,
-                    lon: posicion.coords.longitude,
-                    timestamp: Date.now()
-                };
+        // Función para forzar la petición del GPS
+        function iniciarRastreo() {
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition((posicion) => {
+                    const datos = {
+                        lat: posicion.coords.latitude,
+                        lon: posicion.coords.longitude,
+                        timestamp: Date.now()
+                    };
 
-                // Guarda las coordenadas en el nodo "ubicacion_celular"
-                database.ref('ubicacion_celular').set(datos);
+                    // Guardar directamente en Firebase
+                    database.ref('ubicacion_celular').set(datos);
 
-                document.getElementById('estado').innerHTML = 
-                    `Transmitiendo: ${datos.lat.toFixed(5)}, ${datos.lon.toFixed(5)}`;
-            }, (error) => {
-                document.getElementById('estado').innerHTML = "Error de GPS: " + error.message;
-            }, { enableHighAccuracy: true });
-        } else {
-            document.getElementById('estado').innerHTML = "GPS no soportado.";
+                    document.getElementById('estado').innerHTML = 
+                        `🟢 Transmitiendo posición:<br><b>Lat:</b> ${datos.lat.toFixed(5)}<br><b>Lon:</b> ${datos.lon.toFixed(5)}`;
+                }, (error) => {
+                    document.getElementById('estado').innerHTML = "❌ Error de GPS: " + error.message;
+                }, { 
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                });
+            } else {
+                document.getElementById('estado').innerHTML = "❌ Tu navegador no soporta GPS.";
+            }
         }
+
+        // Ejecutar inmediatamente al abrir la web
+        window.onload = iniciarRastreo;
     </script>
 </body>
 </html>
+        
+                
