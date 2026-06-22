@@ -22,13 +22,18 @@
 </div>
 
 <script>
-    // Dirección URL 100% explícita y completa sin usar uniones de texto
-    const urlDatabase = "https://firebaseio.com";
-
     function traerDatosDesdeFirebase() {
+        // Separamos el dominio completo de forma estricta para evitar que el navegador lo recorte
+        const dominioBase = "https://eterpi-pruebas-default-rtdb.firebaseio.com/";
+        const archivoNodo = "ubicacion_celular.json";
+        const claveAcceso = "AIzaSyAjwC0kd0MfffW3ybzK_ypmNLCBH_QbfWQ";
+        const tiempoCache = Date.now();
+
+        // Construcción matemática perfecta de la URL usando el signo '?' y '&' en sus lugares correctos
+        const urlFinal = dominioBase + archivoNodo + "?key=" + claveAcceso + "&nocache=" + tiempoCache;
+
         const xhr = new XMLHttpRequest();
-        // Añadimos un parámetro de tiempo al final para obligar a romper la caché del navegador
-        xhr.open("GET", urlDatabase + "&nocache=" + Date.now(), true);
+        xhr.open("GET", urlFinal, true);
         
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 && xhr.status === 200) {
@@ -43,7 +48,7 @@
                     document.getElementById('lat').innerText = latNum.toFixed(5);
                     document.getElementById('lon').innerText = lonNum.toFixed(5);
 
-                    // Renderizar mapa estático
+                    // Renderizar el mapa de las calles en pantalla
                     const urlMapa = "https://geoapify.com:" + lonNum + "," + latNum + "&zoom=15&marker=lonlat:" + lonNum + "," + latNum + ";color:%23ff0000;size:medium&apiKey=free";
                     document.getElementById('mapa-imagen').src = urlMapa;
                 }
@@ -52,7 +57,7 @@
         xhr.send();
     }
 
-    // Ejecutar consulta cada 3 segundos
+    // Consultar de manera automática cada 3 segundos
     setInterval(traerDatosDesdeFirebase, 3000);
     traerDatosDesdeFirebase();
 </script>
