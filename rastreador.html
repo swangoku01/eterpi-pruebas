@@ -12,21 +12,21 @@
         <div id="estado" style="font-size: 1.2em; color: #666;">Cargando base de datos segura...</div>
     </div>
 
-    <!-- Cargamos la versión bundle empaquetada que no requiere imports ni genera errores CORS -->
-    <script src="https://gstatic.com"></script>
-    <script src="https://gstatic.com"></script>
+    <!-- Cambiamos gstatic por jsdelivr para evadir bloqueos de red regionales -->
+    <script src="https://jsdelivr.net"></script>
+    <script src="https://jsdelivr.net"></script>
 
     <script>
         window.onload = function() {
-            // Verificación preventiva por si la red bloquea el dominio
+            // Validación con la nueva librería de respaldo
             if (typeof firebase === 'undefined') {
                 document.getElementById('titulo').innerText = "❌ Error de Red";
                 document.getElementById('titulo').style.color = "red";
-                document.getElementById('estado').innerText = "El navegador no pudo descargar los archivos de Firebase. Intenta recargar la página.";
+                document.getElementById('estado').innerText = "Los servidores alternativos también están bloqueados por tu proveedor de internet.";
                 return;
             }
 
-            // Tus credenciales validadas
+            // Tus credenciales validadas de eterpi-pruebas
             const firebaseConfig = {
               apiKey: "AIzaSyAjwC0kd0MfffW3ybzK_ypmNLCBH_QbfWQ",
               authDomain: "://firebaseapp.com",
@@ -39,7 +39,6 @@
             };
 
             try {
-                // Inicialización bajo el estándar clásico de compatibilidad
                 firebase.initializeApp(firebaseConfig);
                 const database = firebase.database();
 
@@ -55,7 +54,6 @@
                             timestamp: Date.now()
                         };
 
-                        // Guardado directo en la base de datos
                         database.ref('ubicacion_celular').set(datos)
                         .then(() => {
                             document.getElementById('titulo').innerText = "🟢 Transmitiendo";
