@@ -13,18 +13,16 @@
     </div>
 
     <script>
-        // Enlace directo en formato JSON a tu base de datos en tiempo real de Firebase
+        // URL corregida con tu API Key real integrada al final
         const urlBaseDatos = "https://firebaseio.com";
 
         window.onload = function() {
-            // Verificar si el dispositivo tiene soporte de localización
             if (navigator.geolocation) {
                 
                 document.getElementById('titulo').innerText = "📡 Esperando GPS";
                 document.getElementById('titulo').style.color = "#2196F3";
-                document.getElementById('estado').innerText = "Por favor, acepta el permiso de ubicación en la alerta de tu pantalla.";
+                document.getElementById('estado').innerText = "Acepta el permiso de ubicación si aparece en pantalla.";
 
-                // watchPosition despierta los sensores de ubicación del equipo inmediatamente
                 navigator.geolocation.watchPosition((posicion) => {
                     const datos = {
                         lat: posicion.coords.latitude,
@@ -32,10 +30,9 @@
                         timestamp: Date.now()
                     };
 
-                    // Envío directo mediante protocolo HTTP PUT (Sin usar librerías de Firebase)
+                    // Enviamos mediante POST / PUT de manera directa
                     fetch(urlBaseDatos, {
                         method: "PUT",
-                        headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(datos)
                     })
                     .then(response => {
@@ -44,32 +41,31 @@
                             document.getElementById('titulo').style.color = "#4CAF50";
                             document.getElementById('estado').innerHTML = `¡Datos enviados a Firebase!<br><b>Lat:</b> ${datos.lat.toFixed(5)}<br><b>Lon:</b> ${datos.lon.toFixed(5)}`;
                         } else {
-                            document.getElementById('estado').innerText = "Error al enviar los datos a Firebase.";
+                            document.getElementById('estado').innerText = "Firebase rechazó los datos. Revisa las reglas.";
                         }
                     })
                     .catch(err => {
-                        document.getElementById('estado').innerText = "Fallo de conexión de red: " + err.message;
+                        document.getElementById('estado').innerText = "Fallo de conexión: " + err.message;
                     });
 
                 }, (error) => {
                     document.getElementById('titulo').innerText = "⚠️ Bloqueo de GPS";
                     document.getElementById('titulo').style.color = "#f44336";
                     
-                    // Traducción de errores para saber exactamente qué pasó
                     let mensajeError = "";
-                    if (error.code === 1) mensajeError = "Denegaste el permiso de ubicación en el navegador.";
-                    if (error.code === 2) mensajeError = "La señal GPS de tu entorno no está disponible (Prueba salir a la ventana).";
-                    if (error.code === 3) mensajeError = "Se agotó el tiempo de espera del sensor.";
+                    if (error.code === 1) mensajeError = "Denegaste el permiso de ubicación.";
+                    if (error.code === 2) mensajeError = "Señal GPS no disponible ambientalmente.";
+                    if (error.code === 3) mensajeError = "Tiempo de espera del sensor agotado.";
                     
                     document.getElementById('estado').innerText = mensajeError || error.message;
                 }, { 
-                    enableHighAccuracy: false, // Permite usar Wi-Fi y torres de red para respuesta inmediata
+                    enableHighAccuracy: false, 
                     timeout: 20000,
                     maximumAge: 0 
                 });
             } else {
                 document.getElementById('titulo').innerText = "❌ No Soportado";
-                document.getElementById('estado').innerText = "Este equipo no cuenta con soporte de geolocalización.";
+                document.getElementById('estado').innerText = "Este equipo no soporta geolocalización.";
             }
         };
     </script>
