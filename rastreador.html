@@ -3,60 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Celular - Transmisor GPS Inmune</title>
+    <title>Celular - Transmisor GPS</title>
 </head>
 <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: #fafafa;">
 
     <div style="background: white; padding: 30px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.1); min-width: 280px;">
         <h1 id="titulo" style="color: #ff9800; margin-top: 0;">⏳ Iniciando</h1>
-        <div id="estado" style="font-size: 1.2em; color: #666;">Activando canal de datos inmune...</div>
+        <div id="estado" style="font-size: 1.2em; color: #666;">Preparando canal directo...</div>
     </div>
 
     <script>
         window.onload = function() {
+            // URL directa con tu API Key integrada para autenticación inmediata
+            const urlFirebase = "https://firebaseio.com";
+
             document.getElementById('titulo').innerText = "📡 Buscando GPS";
             document.getElementById('titulo').style.color = "#2196F3";
-            document.getElementById('estado').innerText = "Por favor, otorga el permiso de ubicación si aparece en pantalla.";
+            document.getElementById('estado').innerText = "Por favor, otorga el permiso de ubicación.";
 
             if (navigator.geolocation) {
                 navigator.geolocation.watchPosition((posicion) => {
-                    const lat = posicion.coords.latitude;
-                    const lon = posicion.coords.longitude;
-                    const timestamp = Date.now();
+                    const datos = {
+                        lat: posicion.coords.latitude,
+                        lon: posicion.coords.longitude,
+                        timestamp: Date.now()
+                    };
 
-                    // Construimos la URL usando el método nativo REST de Firebase para inyectar datos
-                    // Usamos un truco de timestamp aleatorio para evitar que el navegador guarde el envío en caché
-                    const urlFirebase = `https://firebaseio.com{timestamp}`;
-
-                    // EL TRUCO INMUNE: Creamos un elemento <script> dinámico
-                    // Esto salta cualquier restricción CORS o bloqueo de red del navegador (No genera Error 0)
-                    const scriptBypass = document.createElement('script');
-                    
-                    // Convertimos la petición en un formato que Firebase acepta de forma directa vía GET/JSONP
-                    scriptBypass.src = urlFirebase + `&print=silent`; 
-
-                    // Insertamos el script invisible en la página para obligar al navegador a enviar los datos
-                    document.body.appendChild(scriptBypass);
-
-                    // Como el navegador procesa la inyección al instante, pintamos el éxito en pantalla
-                    document.getElementById('titulo').innerText = "🟢 Transmitiendo";
-                    document.getElementById('titulo').style.color = "#4CAF50";
-                    document.getElementById('estado').innerHTML = `¡Datos enviados con éxito a Firebase!<br><b>Lat:</b> ${lat.toFixed(5)}<br><b>Lon:</b> ${lon.toFixed(5)}`;
-                    
-                    // Limpieza del elemento para no saturar la memoria del teléfono
-                    setTimeout(() => { scriptBypass.remove(); }, 1000);
+                    // Petición HTTP directa que Firebase acepta sin errores de red
+                    fetch(urlFirebase, {
+                        method: "PUT",
+                        body: JSON.stringify(datos)
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            document.getElementById('titulo').innerText = "🟢 Transmitiendo";
+                            document.getElementById('titulo').style.color = "#4CAF50";
+                            document.getElementById('estado').innerHTML = `¡Datos inyectados en la nube!<br><b>Lat:</b> ${datos.lat.toFixed(5)}<br><b>Lon:</b> ${datos.lon.toFixed(5)}`;
+                        } else {
+                            document.getElementById('estado').innerText = "Firebase rechazó la conexión. Código: " + response.status;
+                        }
+                    })
+                    .catch(err => {
+                        document.getElementById('estado').innerText = "Error de red móvil: " + err.message;
+                    });
 
                 }, (error) => {
                     document.getElementById('titulo').innerText = "⚠️ Error GPS";
-                    document.getElementById('estado').innerText = "Sensor GPS bloqueado: " + error.message;
-                }, { 
-                    enableHighAccuracy: false, // Permite antenas de telefonía para respuesta inmediata sin esperar satélites
-                    timeout: 15000,
-                    maximumAge: 0 
-                });
-            } else {
-                document.getElementById('titulo').innerText = "❌ No Soportado";
-                document.getElementById('estado').innerText = "Este equipo no soporta geolocalización web.";
+                    document.getElementById('estado').innerText = "No se pudo obtener señal: " + error.message;
+                }, { enableHighAccuracy: false, timeout: 15000 });
             }
         };
     </script>
