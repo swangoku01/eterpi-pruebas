@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitor GPS - Canal Seguro</title>
+    <title>Monitor GPS - Canal Remoto</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background: #f0f4f8; padding: 20px; }
         .caja { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: inline-block; width: 100%; max-width: 600px; margin: 0 auto; }
@@ -22,65 +22,39 @@
 </div>
 
 <script>
-    // Se corrigió y separó la función receptora para que procese de forma global
-    window.procesarRespuestaServidor = function(datos) {
-        if (!datos) return;
+    // Dirección URL 100% explícita y completa sin usar uniones de texto
+    const urlDatabase = "https://firebaseio.com";
 
-        let latEncontrada = null;
-        let lonEncontrada = null;
+    function traerDatosDesdeFirebase() {
+        const xhr = new XMLHttpRequest();
+        // Añadimos un parámetro de tiempo al final para obligar a romper la caché del navegador
+        xhr.open("GET", urlDatabase + "&nocache=" + Date.now(), true);
+        
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                const datos = JSON.parse(xhr.responseText);
+                
+                if (datos && datos.lat && datos.lon) {
+                    const latNum = Number(datos.lat);
+                    const lonNum = Number(datos.lon);
 
-        if (datos.lat && datos.lon) {
-            latEncontrada = datos.lat;
-            lonEncontrada = datos.lon;
-        } else if (datos.ubicacion_celular) {
-            if (datos.ubicacion_celular.lat && datos.ubicacion_celular.lon) {
-                latEncontrada = datos.ubicacion_celular.lat;
-                lonEncontrada = datos.ubicacion_celular.lon;
-            } else {
-                const llaves = Object.keys(datos.ubicacion_celular);
-                const ultimaLlave = llaves[llaves.length - 1];
-                const ultimoRegistro = datos.ubicacion_celular[ultimaLlave];
-                if (ultimoRegistro && ultimoRegistro.lat && ultimoRegistro.lon) {
-                    latEncontrada = ultimoRegistro.lat;
-                    lonEncontrada = ultimoRegistro.lon;
+                    document.getElementById('estado').innerText = "🟢 DISPOSITIVO EN VIVO";
+                    document.getElementById('estado').style.color = "#4CAF50";
+                    document.getElementById('lat').innerText = latNum.toFixed(5);
+                    document.getElementById('lon').innerText = lonNum.toFixed(5);
+
+                    // Renderizar mapa estático
+                    const urlMapa = "https://geoapify.com:" + lonNum + "," + latNum + "&zoom=15&marker=lonlat:" + lonNum + "," + latNum + ";color:%23ff0000;size:medium&apiKey=free";
+                    document.getElementById('mapa-imagen').src = urlMapa;
                 }
             }
-        }
-
-        if (latEncontrada && lonEncontrada) {
-            const latNum = Number(latEncontrada);
-            const lonNum = Number(lonEncontrada);
-
-            document.getElementById('estado').innerText = "🟢 DISPOSITIVO EN VIVO";
-            document.getElementById('estado').style.color = "#4CAF50";
-            document.getElementById('lat').innerText = latNum.toFixed(5);
-            document.getElementById('lon').innerText = lonNum.toFixed(5);
-
-            // Generador de mapas abiertos de Geoapify sin scripts pesados
-            const nuevaUrlMapa = "https://geoapify.com:" + lonNum + "," + latNum + "&zoom=15&marker=lonlat:" + lonNum + "," + latNum + ";color:%23ff0000;size:medium&apiKey=free";
-            document.getElementById('mapa-imagen').src = nuevaUrlMapa;
-        }
-    };
-
-    function realizarConsultaSegura() {
-        const timestamp = Date.now();
-        
-        // CORRECCIÓN TOTAL: Dirección armada con texto plano estricto e infalible
-        const urlCompleta = "https://firebaseio.com" + timestamp;
-
-        const scriptInmune = document.createElement('script');
-        scriptInmune.src = urlCompleta;
-        scriptInmune.id = 'tuna-script';
-
-        const scriptAnterior = document.getElementById('tuna-script');
-        if (scriptAnterior) scriptAnterior.remove();
-
-        document.body.appendChild(scriptInmune);
+        };
+        xhr.send();
     }
 
-    // Consulta automática en bucle cada 3 segundos
-    setInterval(realizarConsultaSegura, 3000);
-    realizarConsultaSegura();
+    // Ejecutar consulta cada 3 segundos
+    setInterval(traerDatosDesdeFirebase, 3000);
+    traerDatosDesdeFirebase();
 </script>
 </body>
 </html>
