@@ -3,88 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rastreador Inmune por WebSocket</title>
+    <title>Celular - Transmisor GPS</title>
 </head>
 <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: #fafafa;">
 
     <div style="background: white; padding: 30px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.1); min-width: 280px;">
         <h1 id="titulo" style="color: #ff9800; margin-top: 0;">⏳ Iniciando</h1>
-        <div id="estado" style="font-size: 1.2em; color: #666;">Abriendo túnel de datos directo...</div>
+        <div id="estado" style="font-size: 1.2em; color: #666;">Cargando base de datos segura...</div>
     </div>
+
+    <!-- Librerías estables vía CDNJS -->
+    <script src="https://cloudflare.com"></script>
+    <script src="https://cloudflare.com"></script>
 
     <script>
         window.onload = function() {
-            // Conexión directa por WebSocket a tu base de datos de Firebase
-            const wsUrl = "wss://://firebaseio.com";
-            let socket;
-
-            try {
-                socket = new WebSocket(wsUrl);
-
-                socket.onopen = function() {
-                    document.getElementById('titulo').innerText = "📡 Buscando GPS";
-                    document.getElementById('titulo').style.color = "#2196F3";
-                    document.getElementById('estado').innerText = "Túnel WebSocket abierto. Esperando respuesta de tus sensores...";
-                    
-                    // Inicializar el protocolo interno de Firebase
-                    socket.send(JSON.stringify({"t": "d", "d": {"r": 1, "a": "s", "b": {"c": {"sdk.js.10-12-0": 1}}}}));
-                    
-                    // Activar los sensores GPS del teléfono / computadora
-                    activarGPS();
-                };
-
-                socket.onerror = function() {
-                    document.getElementById('titulo').innerText = "❌ Error Crítico";
-                    document.getElementById('titulo').style.color = "red";
-                    document.getElementById('estado').innerText = "La red bloqueó el puerto de WebSockets.";
-                };
-
-            } catch (err) {
-                document.getElementById('estado').innerText = "Error de conexión: " + err.message;
+            if (typeof firebase === 'undefined') {
+                document.getElementById('titulo').innerText = "❌ Error de Red";
+                document.getElementById('estado').innerText = "El navegador bloqueó la descarga de Firebase.";
+                return;
             }
 
-            function activarGPS() {
-                if (navigator.geolocation) {
-                    navigator.geolocation.watchPosition((posicion) => {
-                        const datos = {
-                            lat: posicion.coords.latitude,
-                            lon: posicion.coords.longitude,
-                            timestamp: Date.now()
-                        };
+            const firebaseConfig = {
+              apiKey: "AIzaSyAjwC0kd0MfffW3ybzK_ypmNLCBH_QbfWQ",
+              authDomain: "://firebaseapp.com",
+              databaseURL: "https://firebaseio.com",
+              projectId: "eterpi-pruebas",
+              storageBucket: "eterpi-pruebas.firebasestorage.app",
+              messagingSenderId: "271356311805",
+              appId: "1:271356311805:web:4cf25310c27786b1d7e694",
+              measurementId: "G-GHXW8G3JL4"
+            };
 
-                        // Comando estructurado para inyectar datos en Firebase por WebSocket sin librerías
-                        const comandoFirebase = {
-                            "t": "d",
-                            "d": {
-                                "r": 2,
-                                "a": "p",
-                                "b": {
-                                    "p": "ubicacion_celular",
-                                    "d": datos
-                                }
-                            }
-                        };
+            firebase.initializeApp(firebaseConfig);
+            const database = firebase.database();
 
-                        // Enviar el paquete de coordenadas por el túnel abierto
-                        socket.send(JSON.stringify(comandoFirebase));
+            document.getElementById('titulo').innerText = "📡 Buscando GPS";
+            document.getElementById('titulo').style.color = "#2196F3";
+            document.getElementById('estado').innerText = "Por favor, otorga el permiso de ubicación.";
 
-                        document.getElementById('titulo').innerText = "🟢 Transmitiendo";
-                        document.getElementById('titulo').style.color = "#4CAF50";
-                        document.getElementById('estado').innerHTML = `¡Túnel activo e inyectando datos!<br><b>Lat:</b> ${datos.lat.toFixed(5)}<br><b>Lon:</b> ${datos.lon.toFixed(5)}`;
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition((posicion) => {
+                    const datos = {
+                        lat: posicion.coords.latitude,
+                        lon: posicion.coords.longitude,
+                        timestamp: Date.now()
+                    };
 
-                    }, (error) => {
-                        document.getElementById('titulo').innerText = "⚠️ Bloqueo de GPS";
-                        document.getElementById('titulo').style.color = "#f44336";
-                        document.getElementById('estado').innerText = "Túnel listo, pero el navegador bloqueó el hardware GPS. Código: " + error.message;
-                    }, { 
-                        enableHighAccuracy: false, 
-                        timeout: 15000,
-                        maximumAge: 0 
-                    });
-                } else {
-                    document.getElementById('titulo').innerText = "❌ No Soportado";
-                    document.getElementById('estado').innerText = "Este dispositivo no soporta geolocalización web.";
-                }
+                    database.ref('ubicacion_celular').set(datos);
+
+                    document.getElementById('titulo').innerText = "🟢 Transmitiendo";
+                    document.getElementById('titulo').style.color = "#4CAF50";
+                    document.getElementById('estado').innerHTML = `¡Datos enviados a Firebase!<br><b>Lat:</b> ${datos.lat.toFixed(5)}<br><b>Lon:</b> ${datos.lon.toFixed(5)}`;
+                }, (error) => {
+                    document.getElementById('titulo').innerText = "⚠️ Error GPS";
+                    document.getElementById('estado').innerText = "No se pudo obtener la señal: " + error.message;
+                }, { enableHighAccuracy: false, timeout: 15000 });
             }
         };
     </script>
