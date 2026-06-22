@@ -21,36 +21,36 @@
     <img id="mapa-imagen" src="" alt="Esperando coordenadas para dibujar el mapa...">
 </div>
 
+<script src="https://pubnub.com"></script>
+
 <script>
-    const urlFirebase = "https://firebaseio.com";
-
-    function traerDatosDesdeFirebase() {
-        // Petición limpia directa al nodo exacto del celular
-        fetch(urlFirebase + "&nocache=" + Date.now())
-        .then(res => res.json())
-        .then(datos => {
-            if (datos && datos.lat && datos.lon) {
-                const latNum = Number(datos.lat);
-                const lonNum = Number(datos.lon);
-
-                document.getElementById('estado').innerText = "🟢 DISPOSITIVO EN VIVO";
-                document.getElementById('estado').style.color = "#4CAF50";
-                document.getElementById('lat').innerText = latNum.toFixed(5);
-                document.getElementById('lon').innerText = lonNum.toFixed(5);
-
-                // Renderizar el mapa de las calles en pantalla
-                const urlMapa = "https://geoapify.com:" + lonNum + "," + latNum + "&zoom=15&marker=lonlat:" + lonNum + "," + latNum + ";color:%23ff0000;size:medium&apiKey=free";
-                document.getElementById('mapa-imagen').src = urlMapa;
-            }
-        })
-        .catch(err => {
-            console.log("Esperando conexión...");
+    window.onload = function() {
+        const pubnub = new PubNub({
+            subscribeKey: 'sub-c-11226d9e-1011-4f8a-9fb8-51e0cfdc270b',
+            userId: 'computadora_monitor'
         });
-    }
 
-    // Consultar de manera automática cada 3 segundos
-    setInterval(traerDatosDesdeFirebase, 3000);
-    traerDatosDesdeFirebase();
+        // Escuchar el canal seguro en segundo plano de manera continua
+        pubnub.addListener({
+            message: function(event) {
+                const datos = event.message;
+                if (datos && datos.lat && datos.lon) {
+                    document.getElementById('estado').innerText = "🟢 DISPOSITIVO EN VIVO";
+                    document.getElementById('estado').style.color = "#4CAF50";
+                    document.getElementById('lat').innerText = datos.lat.toFixed(5);
+                    document.getElementById('lon').innerText = datos.lon.toFixed(5);
+
+                    // Renderizar mapa de calles estático
+                    const urlMapa = "https://geoapify.com:" + datos.lon + "," + datos.lat + "&zoom=15&marker=lonlat:" + datos.lon + "," + datos.lat + ";color:%23ff0000;size:medium&apiKey=free";
+                    document.getElementById('mapa-imagen').src = urlMapa;
+                }
+            }
+        });
+
+        pubnub.subscribe({
+            channels: ['canal-gps-pruebas']
+        });
+    };
 </script>
 </body>
 </html>
