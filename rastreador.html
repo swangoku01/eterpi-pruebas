@@ -9,13 +9,20 @@
 
     <div style="background: white; padding: 30px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.1); min-width: 280px;">
         <h1 id="titulo" style="color: #ff9800; margin-top: 0;">⏳ Iniciando</h1>
-        <div id="estado" style="font-size: 1.2em; color: #666;">Preparando canal directo...</div>
+        <div id="estado" style="font-size: 1.2em; color: #666;">Preparando canal inmune...</div>
     </div>
+
+    <!-- Cargamos el motor alterno de PubNub -->
+    <script src="https://pubnub.com"></script>
 
     <script>
         window.onload = function() {
-            // URL directa con tu API Key integrada para autenticación inmediata
-            const urlFirebase = "https://firebaseio.com";
+            // Llaves públicas de desarrollo para tu canal de pruebas
+            const pubnub = new PubNub({
+                publishKey: 'pub-c-4c6e93cb-c472-4752-9599-5efdf8ba9656',
+                subscribeKey: 'sub-c-11226d9e-1011-4f8a-9fb8-51e0cfdc270b',
+                userId: 'celular_emisor'
+            });
 
             document.getElementById('titulo').innerText = "📡 Buscando GPS";
             document.getElementById('titulo').style.color = "#2196F3";
@@ -25,31 +32,24 @@
                 navigator.geolocation.watchPosition((posicion) => {
                     const datos = {
                         lat: posicion.coords.latitude,
-                        lon: posicion.coords.longitude,
-                        timestamp: Date.now()
+                        lon: posicion.coords.longitude
                     };
 
-                    // Petición HTTP directa que Firebase acepta sin errores de red
-                    fetch(urlFirebase, {
-                        method: "PUT",
-                        body: JSON.stringify(datos)
-                    })
-                    .then(response => {
-                        if (response.ok) {
+                    // Transmisión directa por el canal alternativo
+                    pubnub.publish({
+                        channel: 'canal-gps-pruebas',
+                        message: datos
+                    }, function(status, response) {
+                        if (!status.error) {
                             document.getElementById('titulo').innerText = "🟢 Transmitiendo";
                             document.getElementById('titulo').style.color = "#4CAF50";
-                            document.getElementById('estado').innerHTML = `¡Datos inyectados en la nube!<br><b>Lat:</b> ${datos.lat.toFixed(5)}<br><b>Lon:</b> ${datos.lon.toFixed(5)}`;
-                        } else {
-                            document.getElementById('estado').innerText = "Firebase rechazó la conexión. Código: " + response.status;
+                            document.getElementById('estado').innerHTML = `¡Datos enviados por canal seguro!<br><b>Lat:</b> ${datos.lat.toFixed(5)}<br><b>Lon:</b> ${datos.lon.toFixed(5)}`;
                         }
-                    })
-                    .catch(err => {
-                        document.getElementById('estado').innerText = "Error de red móvil: " + err.message;
                     });
 
                 }, (error) => {
                     document.getElementById('titulo').innerText = "⚠️ Error GPS";
-                    document.getElementById('estado').innerText = "No se pudo obtener señal: " + error.message;
+                    document.getElementById('estado').innerText = "Revisa los permisos: " + error.message;
                 }, { enableHighAccuracy: false, timeout: 15000 });
             }
         };
