@@ -47,16 +47,16 @@
                     database.ref('ubicacion_celular').set(datos);
 
                     document.getElementById('estado').innerHTML = 
-                        `🟢 Transmitiendo posición:<br><b>Lat:</b> ${datos.lat.toFixed(5)}<br><b>Lon:</b> ${datos.lon.toFixed(5)}`;
+                        ` Transmitiendo posición:<br><b>Lat:</b> ${datos.lat.toFixed(5)}<br><b>Lon:</b> ${datos.lon.toFixed(5)}`;
                 }, (error) => {
-                    document.getElementById('estado').innerHTML = "❌ Error de GPS: " + error.message;
+                    document.getElementById('estado').innerHTML = " Error de GPS: " + error.message;
                 }, { 
                     enableHighAccuracy: true,
                     timeout: 10000,
                     maximumAge: 0
                 });
             } else {
-                document.getElementById('estado').innerHTML = "❌ Tu navegador no soporta GPS.";
+                document.getElementById('estado').innerHTML = " Tu navegador no soporta GPS.";
             }
         }
 
