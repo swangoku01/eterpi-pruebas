@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Celular - Transmisor GPS</title>
+</head>
+<body>
+    <h1>Transmitiendo GPS...</h1>
+    <div id="estado">Iniciando rastreo...</div>
+
+    <!-- Librerías de Firebase -->
+    <script src="https://gstatic.com"></script>
+    <script src="https://gstatic.com"></script>
+
+    <script>
+        
+                const firebaseConfig = {
+  apiKey: "AIzaSyAjwC0kd0MfffW3ybzK_ypmNLCBH_QbfWQ",
+  authDomain: "eterpi-pruebas.firebaseapp.com",
+  databaseURL: "https://eterpi-pruebas-default-rtdb.firebaseio.com",
+  projectId: "eterpi-pruebas",
+  storageBucket: "eterpi-pruebas.firebasestorage.app",
+  messagingSenderId: "271356311805",
+  appId: "1:271356311805:web:4cf25310c27786b1d7e694",
+  measurementId: "G-GHXW8G3JL4"
+};
+        
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition((posicion) => {
+                const datos = {
+                    lat: posicion.coords.latitude,
+                    lon: posicion.coords.longitude,
+                    timestamp: Date.now()
+                };
+
+                // Guarda las coordenadas en el nodo "ubicacion_celular"
+                database.ref('ubicacion_celular').set(datos);
+
+                document.getElementById('estado').innerHTML = 
+                    `Transmitiendo: ${datos.lat.toFixed(5)}, ${datos.lon.toFixed(5)}`;
+            }, (error) => {
+                document.getElementById('estado').innerHTML = "Error de GPS: " + error.message;
+            }, { enableHighAccuracy: true });
+        } else {
+            document.getElementById('estado').innerHTML = "GPS no soportado.";
+        }
+    </script>
+</body>
+</html>
