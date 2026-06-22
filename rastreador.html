@@ -9,17 +9,17 @@
 
     <div style="background: white; padding: 30px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.1); min-width: 280px;">
         <h1 id="titulo" style="color: #ff9800; margin-top: 0;">⏳ Iniciando</h1>
-        <div id="estado" style="font-size: 1.2em; color: #666;">Preparando túnel nativo...</div>
+        <div id="estado" style="font-size: 1.2em; color: #666;">Preparando conexión segura...</div>
     </div>
 
     <script>
         window.onload = function() {
-            // Dirección URL limpia y directa de tu base de datos de Firebase
+            // URL oficial de Firebase para recibir datos externos de forma directa
             const urlFirebase = "https://firebaseio.com";
 
             document.getElementById('titulo').innerText = "📡 Buscando GPS";
             document.getElementById('titulo').style.color = "#2196F3";
-            document.getElementById('estado').innerText = "Por favor, otorga el permiso de ubicación en tu pantalla.";
+            document.getElementById('estado').innerText = "Por favor, otorga el permiso de ubicación.";
 
             if (navigator.geolocation) {
                 navigator.geolocation.watchPosition((posicion) => {
@@ -29,32 +29,32 @@
                         timestamp: Date.now()
                     };
 
-                    // Túnel XMLHttpRequest nativo (Bypass de errores Failed to Fetch)
-                    const xhr = new XMLHttpRequest();
-                    xhr.open("PUT", urlFirebase, true);
-                    xhr.setRequestHeader("Content-Type", "application/json");
-                    
-                    xhr.onreadystatechange = function () {
-                        if (xhr.readyState === 4) {
-                            if (xhr.status >= 200 && xhr.status < 300) {
-                                document.getElementById('titulo').innerText = "🟢 Transmitiendo";
-                                document.getElementById('titulo').style.color = "#4CAF50";
-                                document.getElementById('estado').innerHTML = `¡Datos enviados con éxito!<br><b>Lat:</b> ${datos.lat.toFixed(5)}<br><b>Lon:</b> ${datos.lon.toFixed(5)}`;
-                            } else {
-                                document.getElementById('estado').innerText = "Firebase rechazó el guardado. Código de error: " + xhr.status;
-                            }
+                    // Petición HTTP directa que Firebase acepta sin errores CORS
+                    fetch(urlFirebase, {
+                        method: "PUT",
+                        mode: "cors", // Forzamos al navegador a permitir la salida del dato
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(datos)
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            document.getElementById('titulo').innerText = "🟢 Transmitiendo";
+                            document.getElementById('titulo').style.color = "#4CAF50";
+                            document.getElementById('estado').innerHTML = `¡Datos enviados a Firebase!<br><b>Lat:</b> ${datos.lat.toFixed(5)}<br><b>Lon:</b> ${datos.lon.toFixed(5)}`;
+                        } else {
+                            document.getElementById('estado').innerText = "Firebase rechazó los datos. Revisa las reglas.";
                         }
-                    };
-
-                    xhr.send(JSON.stringify(datos));
+                    })
+                    .catch(err => {
+                        document.getElementById('estado').innerText = "Error de red al transmitir: " + err.message;
+                    });
 
                 }, (error) => {
                     document.getElementById('titulo').innerText = "⚠️ Error GPS";
-                    document.getElementById('estado').innerText = "Señal GPS no disponible: " + error.message;
+                    document.getElementById('estado').innerText = "No se pudo obtener señal: " + error.message;
                 }, { enableHighAccuracy: false, timeout: 15000 });
-            } else {
-                document.getElementById('titulo').innerText = "❌ No Soportado";
-                document.getElementById('estado').innerText = "Este equipo no soporta geolocalización.";
             }
         };
     </script>
