@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transmisor GPS Seguro</title>
+</head>
+<body style="font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: #fafafa;">
+
+    <div style="background: white; padding: 30px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.1); min-width: 280px;">
+        <h1 id="titulo" style="color: #ff9800; margin-top: 0;">⏳ Iniciando</h1>
+        <div id="estado" style="font-size: 1.2em; color: #666;">Cargando canal modular seguro...</div>
+    </div>
+
+    <!-- Cargamos las librerías ES Modules nativas integradas directamente en el navegador -->
+    <script type="module">
+        import { initializeApp } from "https://gstatic.com";
+        import { getDatabase, ref, set } from "https://gstatic.com";
+
+        // Tus credenciales validadas de eterpi-pruebas
+        const firebaseConfig = {
+          apiKey: "AIzaSyAjwC0kd0MfffW3ybzK_ypmNLCBH_QbfWQ",
+          authDomain: "://firebaseapp.com",
+          databaseURL: "https://eterpi-pruebas-default-rtdb.firebaseio.com",
+          projectId: "eterpi-pruebas",
+          storageBucket: "eterpi-pruebas.firebasestorage.app",
+          messagingSenderId: "271356311805",
+          appId: "1:271356311805:web:4cf25310c27786b1d7e694",
+          measurementId: "G-GHXW8G3JL4"
+        };
+
+        // Inicializar Firebase con el estándar moderno (Inmune a bloqueos CORS comunes)
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Cambiar estados visuales
+        document.getElementById('titulo').innerText = "📡 Esperando GPS";
+        document.getElementById('titulo').style.color = "#2196F3";
+        document.getElementById('estado').innerText = "Canal listo. Recibiendo coordenadas desde tus sensores...";
+
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition((posicion) => {
+                const datos = {
+                    lat: posicion.coords.latitude,
+                    lon: posicion.coords.longitude,
+                    timestamp: Date.now()
+                };
+
+                // Guardar datos mediante el túnel seguro de la SDK de Firebase
+                set(ref(database, 'ubicacion_celular'), datos)
+                .then(() => {
+                    document.getElementById('titulo').innerText = "🟢 Transmitiendo";
+                    document.getElementById('titulo').style.color = "#4CAF50";
+                    document.getElementById('estado').innerHTML = `¡Conexión establecida y enviando!<br><b>Lat:</b> ${datos.lat.toFixed(5)}<br><b>Lon:</b> ${datos.lon.toFixed(5)}`;
+                })
+                .catch((err) => {
+                    document.getElementById('estado').innerText = "Firebase rechazó el guardado: " + err.message;
+                });
+
+            }, (error) => {
+                document.getElementById('titulo').innerText = "⚠️ Bloqueo de GPS";
+                document.getElementById('titulo').style.color = "#f44336";
+                document.getElementById('estado').innerText = "El enlace está listo, pero el navegador bloqueó el hardware GPS. Código: " + error.message;
+            }, { 
+                enableHighAccuracy: false, 
+                timeout: 20000,
+                maximumAge: 0 
+            });
+        } else {
+            document.getElementById('titulo').innerText = "❌ No Soportado";
+            document.getElementById('estado').innerText = "Este dispositivo no soporta geolocalización.";
+        }
+    </script>
+</body>
+</html>
