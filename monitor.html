@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor GPS - Canal Seguro</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background: #f0f4f8; padding: 20px; }
+        .caja { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: inline-block; width: 100%; max-width: 600px; margin: 0 auto; }
+        #mapa-imagen { width: 100%; max-width: 500px; height: 400px; border-radius: 8px; border: 2px solid #ccc; margin-top: 15px; background: #e5e3df; }
+        .datos { font-weight: bold; color: #2196F3; }
+    </style>
+</head>
+<body>
+
+<div class="caja">
+    <h2>📍 Monitoreo en Tiempo Real (Receptor)</h2>
+    <p>Estado del enlace: <span id="estado" style="color: #ff9800; font-weight: bold;">⏳ ESPERANDO SEÑAL DEL TELÉFONO...</span></p>
+    <p>Latitud: <span id="lat" class="datos">--</span> | Longitud: <span id="lon" class="datos">--</span></p>
+    
+    <img id="mapa-imagen" src="" alt="Esperando coordenadas para dibujar el mapa...">
+</div>
+
+<script>
+    // URL absoluta reforzada para entornos de servidores web como GitHub Pages
+    const urlFirebase = "https://firebaseio.com";
+
+    function procesarRespuestaServidor(datos) {
+        if (!datos) return;
+
+        let latEncontrada = null;
+        let lonEncontrada = null;
+
+        if (datos.lat && datos.lon) {
+            latEncontrada = datos.lat;
+            lonEncontrada = datos.lon;
+        } else if (datos.ubicacion_celular) {
+            if (datos.ubicacion_celular.lat && datos.ubicacion_celular.lon) {
+                latEncontrada = datos.ubicacion_celular.lat;
+                lonEncontrada = datos.ubicacion_celular.lon;
+            } else {
+                const llaves = Object.keys(datos.ubicacion_celular);
+                const ultimaLlave = llaves[llaves.length - 1];
+                const ultimoRegistro = datos.ubicacion_celular[ultimaLlave];
+                if (ultimoRegistro && ultimoRegistro.lat && ultimoRegistro.lon) {
+                    latEncontrada = ultimoRegistro.lat;
+                    lonEncontrada = ultimoRegistro.lon;
+                }
+            }
+        }
+
+        if (latEncontrada && lonEncontrada) {
+            const latNum = Number(latEncontrada);
+            const lonNum = Number(lonEncontrada);
+
+            document.getElementById('estado').innerText = "🟢 DISPOSITIVO EN VIVO";
+            document.getElementById('estado').style.color = "#4CAF50";
+            document.getElementById('lat').innerText = latNum.toFixed(5);
+            document.getElementById('lon').innerText = lonNum.toFixed(5);
+
+            // Generador de mapas estáticos abierto libre de restricciones locales
+            const nuevaUrlMapa = `https://geoapify.com{lonNum},${latNum}&zoom=15&marker=lonlat:${lonNum},${latNum};color:%23ff0000;size:medium&apiKey=free`;
+            document.getElementById('mapa-imagen').src = nuevaUrlMapa;
+        }
+    }
+
+    function realizarConsultaSegura() {
+        const scriptInmune = document.createElement('script');
+        // Concatenación segura utilizando el estándar de URL de Firebase completo
+        scriptInmune.src = `${urlFirebase}&callback=procesarRespuestaServidor&nocache=${Date.now()}`;
+        scriptInmune.id = 'tuna-script';
+
+        const scriptAnterior = document.getElementById('tuna-script');
+        if (scriptAnterior) scriptAnterior.remove();
+
+        document.body.appendChild(scriptInmune);
+    }
+
+    setInterval(realizarConsultaSegura, 3000);
+    realizarConsultaSegura();
+</script>
+</body>
+</html>
