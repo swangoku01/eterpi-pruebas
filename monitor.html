@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitor GPS - Canal Remoto Real</title>
+    <title>Monitor Real - Canal Seguro</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background: #f0f4f8; padding: 20px; }
         .caja { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: inline-block; width: 100%; max-width: 600px; margin: 0 auto; }
@@ -18,13 +18,12 @@
     <p>Estado del enlace: <span id="estado" style="color: #ff9800; font-weight: bold;">⏳ ESPERANDO SEÑAL REAL...</span></p>
     <p>Latitud: <span id="lat" class="datos">--</span> | Longitud: <span id="lon" class="datos">--</span></p>
     
-    <!-- Imagen del mapa corregida -->
     <img id="mapa-imagen" src="" alt="Esperando señal del teléfono para dibujar el mapa...">
 </div>
 
 <script>
-    // 1. Esta función recibe los datos reales de tu Firebase de forma automática
-    window.procesarDatosCelular = function(datos) {
+    // Cambiamos el nombre de la función a 'recibirGpsCelular' para forzar al navegador a limpiar la caché anterior
+    window.recibirGpsCelular = function(datos) {
         if (datos && datos.lat && datos.lon) {
             const latNum = Number(datos.lat);
             const lonNum = Number(datos.lon);
@@ -34,33 +33,29 @@
             document.getElementById('lat').innerText = latNum.toFixed(5);
             document.getElementById('lon').innerText = lonNum.toFixed(5);
 
-            // CORRECCIÓN DE LA URL DEL MAPA: Estructura limpia y con barras "/" correspondientes
-            const urlMapa = "https://yandex.ru" + lonNum + "," + latNum + "&z=16&l=map&pt=" + lonNum + "," + latNum + ",pm2rdm";
+            // Generador de mapas abiertos estáticos con URL limpia
+            const urlMapa = "https://geoapify.com:" + lonNum + "," + latNum + "&zoom=15&marker=lonlat:" + lonNum + "," + latNum + ";color:%23ff0000;size:medium&apiKey=free";
             document.getElementById('mapa-imagen').src = urlMapa;
         }
     };
 
-    function consultarFirebaseInmune() {
-        const timestamp = Date.now();
-        
-        // 2. Dirección oficial de tu proyecto Firebase (eterpi-pruebas-default-rtdb)
-        // Usamos el parámetro 'callback' para burlar el bloqueo Failed to Fetch / CORS
-        const urlFirebase = "https://firebaseio.com" + timestamp;
+    function consultarBaseDatosReal() {
+        // Al usar un string único continuo evitamos errores de uniones o recortes en navegadores móviles
+        const urlFinal = "https://firebaseio.com" + Date.now();
 
-        // Inyección dinámica de script (Igual a la técnica de tu celular que sí funciona)
-        const scriptBypassPC = document.createElement('script');
-        scriptBypassPC.src = urlFirebase;
-        scriptBypassPC.id = 'script-temporal-pc';
+        const scriptInmunePC = document.createElement('script');
+        scriptInmunePC.src = urlFinal;
+        scriptInmunePC.id = 'nodo-script-pc';
 
-        const scriptViejo = document.getElementById('script-temporal-pc');
-        if (scriptViejo) scriptViejo.remove();
+        const scriptViejo = document.getElementById('nodo-script-pc');
+        if (scriptAnterior = scriptViejo) scriptViejo.remove();
 
-        document.body.appendChild(scriptBypassPC);
+        document.body.appendChild(scriptInmunePC);
     }
 
-    // Consulta real en vivo cada 3 segundos
-    setInterval(consultarFirebaseInmune, 3000);
-    consultarFirebaseInmune();
+    // Consulta en bucle automatizada cada 3 segundos
+    setInterval(consultarBaseDatosReal, 3000);
+    consultarBaseDatosReal();
 </script>
 </body>
 </html>
