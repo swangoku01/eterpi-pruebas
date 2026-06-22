@@ -3,44 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Celular - Transmisor GPS</title>
+    <title>Celular - Transmisor GPS Inmune</title>
 </head>
 <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: #fafafa;">
 
     <div style="background: white; padding: 30px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.1); min-width: 280px;">
         <h1 id="titulo" style="color: #ff9800; margin-top: 0;">⏳ Iniciando</h1>
-        <div id="estado" style="font-size: 1.2em; color: #666;">Cargando base de datos segura...</div>
+        <div id="estado" style="font-size: 1.2em; color: #666;">Activando motor local integrado...</div>
     </div>
 
-    <!-- Librerías estables vía CDNJS -->
-    <script src="https://cloudflare.com"></script>
-    <script src="https://cloudflare.com"></script>
+    <!-- MOTOR INTERNO DE FIREBASE (Evita la descarga desde servidores bloqueados) -->
+    <script>
+        const FirebaseLocal = {
+            enviar: function(config, datos) {
+                const url = `${config.databaseURL}/ubicacion_celular.json?auth=${config.apiKey}`;
+                return fetch(url, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(datos)
+                });
+            }
+        };
+    </script>
 
     <script>
         window.onload = function() {
-            if (typeof firebase === 'undefined') {
-                document.getElementById('titulo').innerText = "❌ Error de Red";
-                document.getElementById('estado').innerText = "El navegador bloqueó la descarga de Firebase.";
-                return;
-            }
-
             const firebaseConfig = {
               apiKey: "AIzaSyAjwC0kd0MfffW3ybzK_ypmNLCBH_QbfWQ",
-              authDomain: "://firebaseapp.com",
-              databaseURL: "https://firebaseio.com",
-              projectId: "eterpi-pruebas",
-              storageBucket: "eterpi-pruebas.firebasestorage.app",
-              messagingSenderId: "271356311805",
-              appId: "1:271356311805:web:4cf25310c27786b1d7e694",
-              measurementId: "G-GHXW8G3JL4"
+              databaseURL: "https://firebaseio.com"
             };
-
-            firebase.initializeApp(firebaseConfig);
-            const database = firebase.database();
 
             document.getElementById('titulo').innerText = "📡 Buscando GPS";
             document.getElementById('titulo').style.color = "#2196F3";
-            document.getElementById('estado').innerText = "Por favor, otorga el permiso de ubicación.";
+            document.getElementById('estado').innerText = "Por favor, otorga el permiso de ubicación en tu pantalla.";
 
             if (navigator.geolocation) {
                 navigator.geolocation.watchPosition((posicion) => {
@@ -50,11 +45,21 @@
                         timestamp: Date.now()
                     };
 
-                    database.ref('ubicacion_celular').set(datos);
+                    // Envió directo usando el motor local inmune a bloqueos
+                    FirebaseLocal.enviar(firebaseConfig, datos)
+                    .then(res => {
+                        if(res.ok) {
+                            document.getElementById('titulo').innerText = "🟢 Transmitiendo";
+                            document.getElementById('titulo').style.color = "#4CAF50";
+                            document.getElementById('estado').innerHTML = `¡Datos enviados a Firebase!<br><b>Lat:</b> ${datos.lat.toFixed(5)}<br><b>Lon:</b> ${datos.lon.toFixed(5)}`;
+                        } else {
+                            document.getElementById('estado').innerText = "Firebase rechazó los datos. Verifica las Reglas.";
+                        }
+                    })
+                    .catch(err => {
+                        document.getElementById('estado').innerText = "Error en el túnel de red: " + err.message;
+                    });
 
-                    document.getElementById('titulo').innerText = "🟢 Transmitiendo";
-                    document.getElementById('titulo').style.color = "#4CAF50";
-                    document.getElementById('estado').innerHTML = `¡Datos enviados a Firebase!<br><b>Lat:</b> ${datos.lat.toFixed(5)}<br><b>Lon:</b> ${datos.lon.toFixed(5)}`;
                 }, (error) => {
                     document.getElementById('titulo').innerText = "⚠️ Error GPS";
                     document.getElementById('estado').innerText = "No se pudo obtener la señal: " + error.message;
