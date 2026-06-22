@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitor GPS - Canal Seguro</title>
+    <title>Monitor GPS - Canal Remoto Real</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background: #f0f4f8; padding: 20px; }
         .caja { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: inline-block; width: 100%; max-width: 600px; margin: 0 auto; }
@@ -15,40 +15,52 @@
 
 <div class="caja">
     <h2>📍 Monitoreo en Tiempo Real (Receptor)</h2>
-    <p>Estado del enlace: <span id="estado" style="color: #ff9800; font-weight: bold;">⏳ ESPERANDO SEÑAL DEL TELÉFONO...</span></p>
+    <p>Estado del enlace: <span id="estado" style="color: #ff9800; font-weight: bold;">⏳ ESPERANDO SEÑAL REAL...</span></p>
     <p>Latitud: <span id="lat" class="datos">--</span> | Longitud: <span id="lon" class="datos">--</span></p>
     
-    <img id="mapa-imagen" src="" alt="Cargando mapa visual de calles...">
+    <!-- Imagen del mapa corregida -->
+    <img id="mapa-imagen" src="" alt="Esperando señal del teléfono para dibujar el mapa...">
 </div>
 
 <script>
-    // Coordenadas iniciales neutrales de prueba
-    let latBase = 19.43260;
-    let lonBase = -99.13320;
+    // 1. Esta función recibe los datos reales de tu Firebase de forma automática
+    window.procesarDatosCelular = function(datos) {
+        if (datos && datos.lat && datos.lon) {
+            const latNum = Number(datos.lat);
+            const lonNum = Number(datos.lon);
 
-    function renderizarMapaEnPantalla(lat, lon) {
-        document.getElementById('estado').innerText = "🟢 DISPOSITIVO EN VIVO";
-        document.getElementById('estado').style.color = "#4CAF50";
-        document.getElementById('lat').innerText = lat.toFixed(5);
-        document.getElementById('lon').innerText = lon.toFixed(5);
+            document.getElementById('estado').innerText = "🟢 DISPOSITIVO EN VIVO";
+            document.getElementById('estado').style.color = "#4CAF50";
+            document.getElementById('lat').innerText = latNum.toFixed(5);
+            document.getElementById('lon').innerText = lonNum.toFixed(5);
 
-        // Servidor alternativo directo que no requiere API Key ni genera errores de bloqueo
-        const urlMapa = "https://yandex.ru" + lon + "," + lat + "&z=15&l=map&pt=" + lon + "," + lat + ",pm2rdm";
-        document.getElementById('mapa-imagen').src = urlMapa;
-    }
+            // CORRECCIÓN DE LA URL DEL MAPA: Estructura limpia y con barras "/" correspondientes
+            const urlMapa = "https://yandex.ru" + lonNum + "," + latNum + "&z=16&l=map&pt=" + lonNum + "," + latNum + ",pm2rdm";
+            document.getElementById('mapa-imagen').src = urlMapa;
+        }
+    };
 
-    function procesarFlujoDeDatos() {
-        // Simula la recepción de los datos del celular de manera local continua 
-        // para asegurar que la interfaz de la computadora pinte el mapa sin bloquearse por la red
-        latBase += (Math.random() - 0.4) * 0.0002;
-        lonBase += (Math.random() - 0.5) * 0.0002;
+    function consultarFirebaseInmune() {
+        const timestamp = Date.now();
         
-        renderizarMapaEnPantalla(latBase, lonBase);
+        // 2. Dirección oficial de tu proyecto Firebase (eterpi-pruebas-default-rtdb)
+        // Usamos el parámetro 'callback' para burlar el bloqueo Failed to Fetch / CORS
+        const urlFirebase = "https://firebaseio.com" + timestamp;
+
+        // Inyección dinámica de script (Igual a la técnica de tu celular que sí funciona)
+        const scriptBypassPC = document.createElement('script');
+        scriptBypassPC.src = urlFirebase;
+        scriptBypassPC.id = 'script-temporal-pc';
+
+        const scriptViejo = document.getElementById('script-temporal-pc');
+        if (scriptViejo) scriptViejo.remove();
+
+        document.body.appendChild(scriptBypassPC);
     }
 
-    // El monitor refresca y actualiza la pantalla cada 3 segundos
-    setInterval(procesarFlujoDeDatos, 3000);
-    procesarFlujoDeDatos();
+    // Consulta real en vivo cada 3 segundos
+    setInterval(consultarFirebaseInmune, 3000);
+    consultarFirebaseInmune();
 </script>
 </body>
 </html>
