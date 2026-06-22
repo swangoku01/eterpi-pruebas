@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitor GPS - Canal Remoto</title>
+    <title>Monitor GPS - Canal Seguro</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background: #f0f4f8; padding: 20px; }
         .caja { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: inline-block; width: 100%; max-width: 600px; margin: 0 auto; }
@@ -22,70 +22,33 @@
 </div>
 
 <script>
+    const urlFirebase = "https://firebaseio.com";
+
     function traerDatosDesdeFirebase() {
-        const dominioBase = "https://eterpi-pruebas-default-rtdb.firebaseio.com/";
-        const claveAcceso = "AIzaSyAjwC0kd0MfffW3ybzK_ypmNLCBH_QbfWQ";
-        const tiempoCache = Date.now();
+        // Petición limpia directa al nodo exacto del celular
+        fetch(urlFirebase + "&nocache=" + Date.now())
+        .then(res => res.json())
+        .then(datos => {
+            if (datos && datos.lat && datos.lon) {
+                const latNum = Number(datos.lat);
+                const lonNum = Number(datos.lon);
 
-        // CAMBIO CLAVE: Consultamos la raíz completa (.json) para buscar la información en todo el proyecto
-        const urlFinal = dominioBase + ".json?key=" + claveAcceso + "&nocache=" + tiempoCache;
+                document.getElementById('estado').innerText = "🟢 DISPOSITIVO EN VIVO";
+                document.getElementById('estado').style.color = "#4CAF50";
+                document.getElementById('lat').innerText = latNum.toFixed(5);
+                document.getElementById('lon').innerText = lonNum.toFixed(5);
 
-        const xhr = new XMLHttpRequest();
-        xhr.open("GET", urlFinal, true);
-        
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                const proyectoCompleto = JSON.parse(xhr.responseText);
-                
-                if (proyectoCompleto) {
-                    let latEncontrada = null;
-                    let lonEncontrada = null;
-
-                    // 1. BUSCADOR AUTOMÁTICO EN PROFUNDIDAD: Escanea las estructuras posibles
-                    if (proyectoCompleto.lat && proyectoCompleto.lon) {
-                        latEncontrada = proyectoCompleto.lat;
-                        lonEncontrada = proyectoCompleto.lon;
-                    } else if (proyectoCompleto.ubicacion_celular) {
-                        const nodoCelular = proyectoCompleto.ubicacion_celular;
-                        
-                        if (nodoCelular.lat && nodoCelular.lon) {
-                            latEncontrada = nodoCelular.lat;
-                            lonEncontrada = nodoCelular.lon;
-                        } else {
-                            // Si Firebase guardó un historial con claves únicas, extrae el registro más reciente
-                            const llaves = Object.keys(nodoCelular);
-                            if (llaves.length > 0) {
-                                const ultimaLlave = llaves[llaves.length - 1];
-                                const ultimoRegistro = nodoCelular[ultimaLlave];
-                                if (ultimoRegistro && ultimoRegistro.lat && ultimoRegistro.lon) {
-                                    latEncontrada = ultimoRegistro.lat;
-                                    lonEncontrada = ultimoRegistro.lon;
-                                }
-                            }
-                        }
-                    }
-
-                    // 2. Si el escáner rescata las coordenadas, pintamos el mapa de inmediato
-                    if (latEncontrada && lonEncontrada) {
-                        const latNum = Number(latEncontrada);
-                        const lonNum = Number(lonEncontrada);
-
-                        document.getElementById('estado').innerText = "🟢 DISPOSITIVO EN VIVO";
-                        document.getElementById('estado').style.color = "#4CAF50";
-                        document.getElementById('lat').innerText = latNum.toFixed(5);
-                        document.getElementById('lon').innerText = lonNum.toFixed(5);
-
-                        // Cargar mapa estático
-                        const urlMapa = "https://geoapify.com:" + lonNum + "," + latNum + "&zoom=15&marker=lonlat:" + lonNum + "," + latNum + ";color:%23ff0000;size:medium&apiKey=free";
-                        document.getElementById('mapa-imagen').src = urlMapa;
-                    }
-                }
+                // Renderizar el mapa de las calles en pantalla
+                const urlMapa = "https://geoapify.com:" + lonNum + "," + latNum + "&zoom=15&marker=lonlat:" + lonNum + "," + latNum + ";color:%23ff0000;size:medium&apiKey=free";
+                document.getElementById('mapa-imagen').src = urlMapa;
             }
-        };
-        xhr.send();
+        })
+        .catch(err => {
+            console.log("Esperando conexión...");
+        });
     }
 
-    // Consulta en bucle cada 3 segundos
+    // Consultar de manera automática cada 3 segundos
     setInterval(traerDatosDesdeFirebase, 3000);
     traerDatosDesdeFirebase();
 </script>
