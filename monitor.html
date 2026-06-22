@@ -22,10 +22,8 @@
 </div>
 
 <script>
-    // URL absoluta reforzada para entornos de servidores web como GitHub Pages
-    const urlFirebase = "https://firebaseio.com";
-
-    function procesarRespuestaServidor(datos) {
+    // Se corrigió y separó la función receptora para que procese de forma global
+    window.procesarRespuestaServidor = function(datos) {
         if (!datos) return;
 
         let latEncontrada = null;
@@ -58,16 +56,20 @@
             document.getElementById('lat').innerText = latNum.toFixed(5);
             document.getElementById('lon').innerText = lonNum.toFixed(5);
 
-            // Generador de mapas estáticos abierto libre de restricciones locales
-            const nuevaUrlMapa = `https://geoapify.com{lonNum},${latNum}&zoom=15&marker=lonlat:${lonNum},${latNum};color:%23ff0000;size:medium&apiKey=free`;
+            // Generador de mapas abiertos de Geoapify sin scripts pesados
+            const nuevaUrlMapa = "https://geoapify.com:" + lonNum + "," + latNum + "&zoom=15&marker=lonlat:" + lonNum + "," + latNum + ";color:%23ff0000;size:medium&apiKey=free";
             document.getElementById('mapa-imagen').src = nuevaUrlMapa;
         }
-    }
+    };
 
     function realizarConsultaSegura() {
+        const timestamp = Date.now();
+        
+        // CORRECCIÓN TOTAL: Dirección armada con texto plano estricto e infalible
+        const urlCompleta = "https://firebaseio.com" + timestamp;
+
         const scriptInmune = document.createElement('script');
-        // Concatenación segura utilizando el estándar de URL de Firebase completo
-        scriptInmune.src = `${urlFirebase}&callback=procesarRespuestaServidor&nocache=${Date.now()}`;
+        scriptInmune.src = urlCompleta;
         scriptInmune.id = 'tuna-script';
 
         const scriptAnterior = document.getElementById('tuna-script');
@@ -76,6 +78,7 @@
         document.body.appendChild(scriptInmune);
     }
 
+    // Consulta automática en bucle cada 3 segundos
     setInterval(realizarConsultaSegura, 3000);
     realizarConsultaSegura();
 </script>
