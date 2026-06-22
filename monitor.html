@@ -23,41 +23,69 @@
 
 <script>
     function traerDatosDesdeFirebase() {
-        // Separamos el dominio completo de forma estricta para evitar que el navegador lo recorte
         const dominioBase = "https://eterpi-pruebas-default-rtdb.firebaseio.com/";
-        const archivoNodo = "ubicacion_celular.json";
         const claveAcceso = "AIzaSyAjwC0kd0MfffW3ybzK_ypmNLCBH_QbfWQ";
         const tiempoCache = Date.now();
 
-        // Construcción matemática perfecta de la URL usando el signo '?' y '&' en sus lugares correctos
-        const urlFinal = dominioBase + archivoNodo + "?key=" + claveAcceso + "&nocache=" + tiempoCache;
+        // CAMBIO CLAVE: Consultamos la raíz completa (.json) para buscar la información en todo el proyecto
+        const urlFinal = dominioBase + ".json?key=" + claveAcceso + "&nocache=" + tiempoCache;
 
         const xhr = new XMLHttpRequest();
         xhr.open("GET", urlFinal, true);
         
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 && xhr.status === 200) {
-                const datos = JSON.parse(xhr.responseText);
+                const proyectoCompleto = JSON.parse(xhr.responseText);
                 
-                if (datos && datos.lat && datos.lon) {
-                    const latNum = Number(datos.lat);
-                    const lonNum = Number(datos.lon);
+                if (proyectoCompleto) {
+                    let latEncontrada = null;
+                    let lonEncontrada = null;
 
-                    document.getElementById('estado').innerText = "🟢 DISPOSITIVO EN VIVO";
-                    document.getElementById('estado').style.color = "#4CAF50";
-                    document.getElementById('lat').innerText = latNum.toFixed(5);
-                    document.getElementById('lon').innerText = lonNum.toFixed(5);
+                    // 1. BUSCADOR AUTOMÁTICO EN PROFUNDIDAD: Escanea las estructuras posibles
+                    if (proyectoCompleto.lat && proyectoCompleto.lon) {
+                        latEncontrada = proyectoCompleto.lat;
+                        lonEncontrada = proyectoCompleto.lon;
+                    } else if (proyectoCompleto.ubicacion_celular) {
+                        const nodoCelular = proyectoCompleto.ubicacion_celular;
+                        
+                        if (nodoCelular.lat && nodoCelular.lon) {
+                            latEncontrada = nodoCelular.lat;
+                            lonEncontrada = nodoCelular.lon;
+                        } else {
+                            // Si Firebase guardó un historial con claves únicas, extrae el registro más reciente
+                            const llaves = Object.keys(nodoCelular);
+                            if (llaves.length > 0) {
+                                const ultimaLlave = llaves[llaves.length - 1];
+                                const ultimoRegistro = nodoCelular[ultimaLlave];
+                                if (ultimoRegistro && ultimoRegistro.lat && ultimoRegistro.lon) {
+                                    latEncontrada = ultimoRegistro.lat;
+                                    lonEncontrada = ultimoRegistro.lon;
+                                }
+                            }
+                        }
+                    }
 
-                    // Renderizar el mapa de las calles en pantalla
-                    const urlMapa = "https://geoapify.com:" + lonNum + "," + latNum + "&zoom=15&marker=lonlat:" + lonNum + "," + latNum + ";color:%23ff0000;size:medium&apiKey=free";
-                    document.getElementById('mapa-imagen').src = urlMapa;
+                    // 2. Si el escáner rescata las coordenadas, pintamos el mapa de inmediato
+                    if (latEncontrada && lonEncontrada) {
+                        const latNum = Number(latEncontrada);
+                        const lonNum = Number(lonEncontrada);
+
+                        document.getElementById('estado').innerText = "🟢 DISPOSITIVO EN VIVO";
+                        document.getElementById('estado').style.color = "#4CAF50";
+                        document.getElementById('lat').innerText = latNum.toFixed(5);
+                        document.getElementById('lon').innerText = lonNum.toFixed(5);
+
+                        // Cargar mapa estático
+                        const urlMapa = "https://geoapify.com:" + lonNum + "," + latNum + "&zoom=15&marker=lonlat:" + lonNum + "," + latNum + ";color:%23ff0000;size:medium&apiKey=free";
+                        document.getElementById('mapa-imagen').src = urlMapa;
+                    }
                 }
             }
         };
         xhr.send();
     }
 
-    // Consultar de manera automática cada 3 segundos
+    // Consulta en bucle cada 3 segundos
     setInterval(traerDatosDesdeFirebase, 3000);
     traerDatosDesdeFirebase();
 </script>
