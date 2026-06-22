@@ -13,29 +13,30 @@
         </div>
     </div>
 
-    <!-- Cargar librerías COMPAT de Firebase (Obligatorias) -->
+    <!-- Librerías de Firebase actualizadas -->
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
 
     <script>
-       const firebaseConfig = {
-  apiKey: "AIzaSyAjwC0kd0MfffW3ybzK_ypmNLCBH_QbfWQ",
-  authDomain: "eterpi-pruebas.firebaseapp.com",
-  databaseURL: "https://eterpi-pruebas-default-rtdb.firebaseio.com",
-  projectId: "eterpi-pruebas",
-  storageBucket: "eterpi-pruebas.firebasestorage.app",
-  messagingSenderId: "271356311805",
-  appId: "1:271356311805:web:4cf25310c27786b1d7e694",
-  measurementId: "G-GHXW8G3JL4"
-};
+        // Tus credenciales reales y validadas
+        const firebaseConfig = {
+          apiKey: "AIzaSyAjwC0kd0MfffW3ybzK_ypmNLCBH_QbfWQ",
+          authDomain: "eterpi-pruebas.firebaseapp.com",
+          databaseURL: "https://eterpi-pruebas-default-rtdb.firebaseio.com",
+          projectId: "eterpi-pruebas",
+          storageBucket: "eterpi-pruebas.firebasestorage.app",
+          messagingSenderId: "271356311805",
+          appId: "1:271356311805:web:4cf25310c27786b1d7e694",
+          measurementId: "G-GHXW8G3JL4"
+        };
         
-        // Inicializar Firebase
+        // Inicializar la aplicación
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // Función para forzar la petición del GPS
         function iniciarRastreo() {
             if (navigator.geolocation) {
+                // Usamos parámetros optimizados para que el teléfono responda rápido
                 navigator.geolocation.watchPosition((posicion) => {
                     const datos = {
                         lat: posicion.coords.latitude,
@@ -43,27 +44,25 @@
                         timestamp: Date.now()
                     };
 
-                    // Guardar directamente en Firebase
+                    // Guarda la ubicación en la base de datos
                     database.ref('ubicacion_celular').set(datos);
 
                     document.getElementById('estado').innerHTML = 
-                        ` Transmitiendo posición:<br><b>Lat:</b> ${datos.lat.toFixed(5)}<br><b>Lon:</b> ${datos.lon.toFixed(5)}`;
+                        `🟢 Transmitiendo posición:<br><b>Lat:</b> ${datos.lat.toFixed(5)}<br><b>Lon:</b> ${datos.lon.toFixed(5)}`;
                 }, (error) => {
-                    document.getElementById('estado').innerHTML = " Error de GPS: " + error.message;
+                    document.getElementById('estado').innerHTML = "❌ Error de GPS: " + error.message;
                 }, { 
-                    enableHighAccuracy: true,
-                    timeout: 10000,
+                    enableHighAccuracy: false, // Permite antenas de red para una respuesta instantánea
+                    timeout: 20000,
                     maximumAge: 0
                 });
             } else {
-                document.getElementById('estado').innerHTML = " Tu navegador no soporta GPS.";
+                document.getElementById('estado').innerHTML = "❌ Tu navegador no soporta GPS.";
             }
         }
 
-        // Ejecutar inmediatamente al abrir la web
+        // Ejecutar al cargar la pantalla
         window.onload = iniciarRastreo;
     </script>
 </body>
 </html>
-        
-                
