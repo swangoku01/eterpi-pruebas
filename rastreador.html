@@ -1,56 +1,109 @@
-<!DOCTYPE html>
-<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Celular - Transmisor GPS Real</title>
     <title>Celular - Transmisor GPS</title>
 </head>
 <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: #fafafa;">
 
     <div style="background: white; padding: 30px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.1); min-width: 280px;">
         <h1 id="titulo" style="color: #ff9800; margin-top: 0;">⏳ Iniciando</h1>
-        <div id="estado" style="font-size: 1.2em; color: #666;">Preparando canal inmune...</div>
+        <div id="estado" style="font-size: 1.2em; color: #666;">Conectando con canal seguro...</div>
+        <div id="estado" style="font-size: 1.2em; color: #666;">Activando sensores...</div>
     </div>
 
-    <!-- Cargamos el motor alterno de PubNub -->
-    <script src="https://pubnub.com"></script>
-
+    <!-- Forzamos el uso de módulos nativos para romper el bloqueo de red -->
+    <script type="module">
+        import { initializeApp } from "https://gstatic.com";
+        import { getDatabase, ref, set } from "https://gstatic.com";
     <script>
         window.onload = function() {
-            // Llaves públicas de desarrollo para tu canal de pruebas
-            const pubnub = new PubNub({
-                publishKey: 'pub-c-4c6e93cb-c472-4752-9599-5efdf8ba9656',
-                subscribeKey: 'sub-c-11226d9e-1011-4f8a-9fb8-51e0cfdc270b',
-                userId: 'celular_emisor'
-            });
+            // URL limpia para inyectar datos directamente mediante la API REST de Google
+            const urlFirebase = "https://firebaseio.com";
 
+        const firebaseConfig = {
+          apiKey: "AIzaSyAjwC0kd0MfffW3ybzK_ypmNLCBH_QbfWQ",
+          authDomain: "://firebaseapp.com",
+          databaseURL: "https://firebaseio.com",
+          projectId: "eterpi-pruebas",
+          storageBucket: "eterpi-pruebas.firebasestorage.app",
+          messagingSenderId: "271356311805",
+          appId: "1:271356311805:web:4cf25310c27786b1d7e694"
+        };
             document.getElementById('titulo').innerText = "📡 Buscando GPS";
             document.getElementById('titulo').style.color = "#2196F3";
-            document.getElementById('estado').innerText = "Por favor, otorga el permiso de ubicación.";
+            document.getElementById('estado').innerText = "Por favor, permite el acceso a la ubicación si aparece el cuadro flotante.";
 
+        // Inicializar conexión segura
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
             if (navigator.geolocation) {
+                // watchPosition despierta inmediatamente los sensores físicos del dispositivo
                 navigator.geolocation.watchPosition((posicion) => {
                     const datos = {
                         lat: posicion.coords.latitude,
-                        lon: posicion.coords.longitude
+                        lon: posicion.coords.longitude,
+                        timestamp: Date.now()
                     };
 
-                    // Transmisión directa por el canal alternativo
-                    pubnub.publish({
-                        channel: 'canal-gps-pruebas',
-                        message: datos
-                    }, function(status, response) {
-                        if (!status.error) {
-                            document.getElementById('titulo').innerText = "🟢 Transmitiendo";
-                            document.getElementById('titulo').style.color = "#4CAF50";
-                            document.getElementById('estado').innerHTML = `¡Datos enviados por canal seguro!<br><b>Lat:</b> ${datos.lat.toFixed(5)}<br><b>Lon:</b> ${datos.lon.toFixed(5)}`;
+        document.getElementById('titulo').innerText = "📡 Buscando GPS";
+        document.getElementById('titulo').style.color = "#2196F3";
+        document.getElementById('estado').innerText = "Acepta el permiso de ubicación si aparece en pantalla.";
+                    // Túnel XMLHttpRequest tradicional (Bypass total de políticas CORS de scripts externos)
+                    const xhr = new XMLHttpRequest();
+                    xhr.open("PUT", urlFirebase, true);
+                    
+                    // Al no usar Content-Type JSON estricto, el navegador lo envía como petición simple libre de CORS
+                    xhr.setRequestHeader("Content-Type", "text/plain");
+                    
+                    xhr.onreadystatechange = function () {
+                        if (xhr.readyState === 4) {
+                            if (xhr.status >= 200 && xhr.status < 300) {
+                                document.getElementById('titulo').innerText = "🟢 Transmitiendo";
+                                document.getElementById('titulo').style.color = "#4CAF50";
+                                document.getElementById('estado').innerHTML = `¡Conectado e inyectando datos!<br><b>Lat:</b> ${datos.lat.toFixed(5)}<br><b>Lon:</b> ${datos.lon.toFixed(5)}`;
+                            } else {
+                                document.getElementById('estado').innerText = "Error de canal Firebase. Código: " + xhr.status;
+                            }
                         }
-                    });
+                    };
 
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition((posicion) => {
+                const datos = {
+                    lat: posicion.coords.latitude,
+                    lon: posicion.coords.longitude,
+                    timestamp: Date.now()
+                };
+                    xhr.send(JSON.stringify(datos));
+
+                // Guardar usando el canal seguro del SDK
+                set(ref(database, 'ubicacion_celular'), datos)
+                .then(() => {
+                    document.getElementById('titulo').innerText = "🟢 Transmitiendo";
+                    document.getElementById('titulo').style.color = "#4CAF50";
+                    document.getElementById('estado').innerHTML = `¡Conectado a Firebase!<br><b>Lat:</b> ${datos.lat.toFixed(5)}<br><b>Lon:</b> ${datos.lon.toFixed(5)}`;
+                })
+                .catch((err) => {
+                    document.getElementById('estado').innerText = "Error Firebase: " + err.message;
                 }, (error) => {
-                    document.getElementById('titulo').innerText = "⚠️ Error GPS";
-                    document.getElementById('estado').innerText = "Revisa los permisos: " + error.message;
-                }, { enableHighAccuracy: false, timeout: 15000 });
+                    document.getElementById('titulo').innerText = "⚠️ Bloqueo de GPS";
+                    document.getElementById('titulo').style.color = "#f44336";
+                    document.getElementById('estado').innerText = "El navegador bloqueó el sensor GPS. Detalle: " + error.message;
+                }, { 
+                    enableHighAccuracy: false, // Desactivado para forzar respuesta rápida por Wi-Fi/Red sin esperar satélites
+                    timeout: 20000,
+                    maximumAge: 0 
+                });
+
+            }, (error) => {
+                document.getElementById('titulo').innerText = "⚠️ Error GPS";
+                document.getElementById('estado').innerText = "Asegúrate de tener el GPS encendido: " + error.message;
+            }, { enableHighAccuracy: false, timeout: 15000 });
+        }
+            } else {
+                document.getElementById('titulo').innerText = "❌ No Soportado";
+                document.getElementById('estado').innerText = "Este equipo no soporta geolocalización web.";
             }
         };
     </script>
