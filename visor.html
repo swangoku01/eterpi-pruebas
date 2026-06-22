@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visor GPS - Canal Limpio</title>
+    <title>Visor GPS - Conexión Directa</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background: #f0f4f8; padding: 20px; }
         .caja { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: inline-block; width: 100%; max-width: 600px; margin: 0 auto; }
@@ -22,41 +22,36 @@
 </div>
 
 <script>
-    // Usamos el método JSONP estándar apuntando a la raíz del nodo de tu celular
-    window.recibirGpsCelular = function(datos) {
-        if (datos && datos.lat && datos.lon) {
-            const latNum = Number(datos.lat);
-            const lonNum = Number(datos.lon);
-
-            document.getElementById('estado').innerText = "🟢 DISPOSITIVO EN VIVO";
-            document.getElementById('estado').style.color = "#4CAF50";
-            document.getElementById('lat').innerText = latNum.toFixed(5);
-            document.getElementById('lon').innerText = lonNum.toFixed(5);
-
-            // Generador de mapas estáticos Geoapify libre de bloqueos
-            const urlMapa = "https://geoapify.com:" + lonNum + "," + latNum + "&zoom=15&marker=lonlat:" + lonNum + "," + latNum + ";color:%23ff0000;size:medium&apiKey=free";
-            document.getElementById('mapa-imagen').src = urlMapa;
-        }
-    };
-
-    function consultarBaseDatosReal() {
-        // Texto plano continuo estricto para evitar truncados en el navegador
+    function consultarDatosReales() {
+        // Usamos una petición limpia con la función nativa FETCH apuntando estrictamente al nodo JSON
+        // Le agregamos un número aleatorio al final para obligar a GitHub a romper la caché en cada segundo
         const urlFinal = "https://firebaseio.com" + Date.now();
 
-        const scriptInmunePC = document.createElement('script');
-        scriptInmunePC.src = urlFinal;
-        scriptInmunePC.className = 'script-limpiable';
+        fetch(urlFinal)
+        .then(res => res.json())
+        .then(datos => {
+            if (datos && datos.lat && datos.lon) {
+                const latNum = Number(datos.lat);
+                const lonNum = Number(datos.lon);
 
-        // Eliminar scripts anteriores para mantener limpia la memoria
-        const scriptsViejos = document.querySelectorAll('.script-limpiable');
-        scriptsViejos.forEach(s => s.remove());
+                document.getElementById('estado').innerText = "🟢 DISPOSITIVO EN VIVO";
+                document.getElementById('estado').style.color = "#4CAF50";
+                document.getElementById('lat').innerText = latNum.toFixed(5);
+                document.getElementById('lon').innerText = lonNum.toFixed(5);
 
-        document.body.appendChild(scriptInmunePC);
+                // Generador de mapas estáticos Geoapify
+                const urlMapa = "https://geoapify.com:" + lonNum + "," + latNum + "&zoom=15&marker=lonlat:" + lonNum + "," + latNum + ";color:%23ff0000;size:medium&apiKey=free";
+                document.getElementById('mapa-imagen').src = urlMapa;
+            }
+        })
+        .catch(err => {
+            console.log("Sincronizando con el teléfono...");
+        });
     }
 
     // Consulta en bucle automatizada cada 3 segundos
-    setInterval(consultarBaseDatosReal, 3000);
-    consultarBaseDatosReal();
+    setInterval(consultarDatosReales, 3000);
+    consultarDatosReales();
 </script>
 </body>
 </html>
